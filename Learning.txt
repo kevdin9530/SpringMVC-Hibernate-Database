@@ -1,0 +1,113 @@
+In this project, we will connect make a Spring MVC that use hibernate to connect to MySQL database.
+
+We need to create a user and a database through MySQL Workbench. 
+Warning: When create a new user, don't grant full privileges to the user since you already have the root to do it.
+This will cause error:
+Access denied for user 'test'@'localhost' (using password: YES) except root user
+So when creating a user and if you try to grant all privileges, remember to FLUSH PRIVILEGES.
+
+After this we will create a dynamic web project with eclipse. Add some jar files to the WEB-INF/lib to use 
+mysql connector and some other file for the spring mvc projects and our config file for the web. 
+
+In config file, the setup should be like this 
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+
+After that you need: 
+1st you need to define database, datasource and connection pool. 
+
+<bean id="myDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver" />
+        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/web_customer_tracker?useSSL=false&amp;serverTimezone=UTC" />
+        <property name="user" value="springproject" />
+        <property name="password" value="springproject" /> 
+
+        <!-- these are connection pool properties for C3P0 -->
+		<property name="initialPoolSize" value="5"/>
+        <property name="minPoolSize" value="5" />
+        <property name="maxPoolSize" value="20" />
+        <property name="maxIdleTime" value="30000" />
+	</bean>  
+
+2nd is setup a hibernate session factory
+
+<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+		<property name="dataSource" ref="myDataSource" />
+		<property name="packagesToScan" value="com.luv2code.springdemo.entity" />
+		<property name="hibernateProperties">
+		   <props>
+		      <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+		      <prop key="hibernate.show_sql">true</prop>
+		   </props>
+		</property>
+   </bean>	
+   
+   !! WARNING The ref="myDataSource" is depend on what you define your connection bean.   
+   !! WARNING the packages you are scanning is where you put all your component class is. Choose your package correctly
+
+3rdly, for every session we need to have a transaction for it. We dont need to write java code
+for the transaction everytime anymore since Spring already has already an inbuilt for the transaction
+
+<bean id="myTransactionManager"
+            class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    
+4th we need to enable the config of transaction annotation. This allows to lessen your code and save time. 
+<tx:annotation-driven transaction-manager="myTransactionManager" />
+
+
+
+We need to test the jdbc connection before starting the project with TestDbServlet.java file
+
+When making project like this. You usually hear a concept of DAO which is Data Access Object.
+This is responsible for interacting with the database and it's a pretty common design pattern.
+so when create a DAO object, you should think about what you usually do with the database.
+For ex: save, get one, get all, update, delete .... like a normal CRUD app
+For our DAO, we need to have a Hibernate SessionFactory to communicate with the database
+and our SessionFactory need a DataSource to let it know how to connect to the database.
+And these are all dependency. So we can wire them together with Dependency Injection
+which already mostly config like above. We define the database/data source with info how to connect to the database
+and we use that DataSource in our hibernate FatorySession. 
+
+1st thing we do with DAO is define its interface. 
+Then define its implementation, 
+
+In Spring there is a special Anno @Transactional which automatically begin/end the transaction for your hibernate code
+
+There is a special Anno for DAO which is @Repository. It will automatically register DAO thanks to component scanning
+Spring will also provide translation for any JDBC exception
+
+When you implement the DAO interface:
+-your SessionFactory field should be named the same as the bean id in your config file.
+<bean id="sessionFactory" then your implement should be SessionFactory sessionFactory too
+-Create a query according to your CRUD method and getResult from the Query and return it.
+
+after done with DAO implementation
+we need to inject it inside our controller.
+The controller will use getter/setter method and to/from our model depend on what the method is.
+After adding/retrieving to/from the model. We can continue to jsp and display the View to the client.
+
+becuz we are only using html, the display gonna be plain. In this project we will use some extra CSS to make it look nicer.
+first we add recourses inside the Webcontent. 
+After that configure Spring to serve up 'resources' directory.
+Ref CSS in ur jsp.
+
+
