@@ -110,4 +110,24 @@ first we add recourses inside the Webcontent.
 After that configure Spring to serve up 'resources' directory.
 Ref CSS in ur jsp.
 
+To specify the request you can add 
+@RequestMapping(path=""; method=RequestMethod.GET/POST)
+or just using directly @GetMapping("") or PostMapping("")
+Get method is  good for debugging, can be bookmark or email url.
+but limit of data length
+while post method cant bookmark or email url, and doesnt have limitation on 
+data length. It can also send binary data.
+
+We can add a Service layer between the DAO and 	the Controller
+The purpose of this layer is Service Facade design pattern. An intermediate layer for
+custom business logic which allow u to integrate from multiple sources (DAO/Respo)
+and in Spring there is a @Service for service implementation thanks to component scanning
+Development process for Service class:
+-Define Service interface
+-Define Service Implementation which is inject the DAO class 
+
+If you use the Service layer, you would add the @Transactional Anno on the
+service layer method instead of DAO class. Since the Service layer is the
+one making the transacation now. 
+
 
